@@ -41,7 +41,7 @@ public class GestorCargo {
 				
 			return 1;
 			
-		}else if (cargo.getDescripcion() != null) {	
+		}else if ((cargo.getDescripcion() != null) || (!cargo.getDescripcion().isEmpty())) {	
 			
 			//Antes de persistir el nuevo objeto, verificamos si no existe previamente		
 			if (buscarCargo(cargo.getIdCargo())) {
@@ -90,6 +90,44 @@ public class GestorCargo {
 		return false; //No consigue el id suministrado
 	}
 	
+	
+	/**
+	 * Método para recuperar un objeto del tipo Cargo
+	 * @param idCargo	Recibe el Id del Cargo
+	 * @return	Devuelve el objeto Cargo si lo encuentra, sino null
+	 */
+	public Cargo obtenerCargo(int idCargo) {
+		
+		if (idCargo != 0) {
+			
+			Optional<Cargo> optCargo = cargoDao.findById(idCargo);
+			
+			if (optCargo.isPresent()) {
+				
+				return optCargo.orElse(null);
+				
+			}
+			
+		}
+		
+		return null;
+	}
+	
+	
+	public Cargo obtenerCargoPorDescripcion(String descripcion) {
+		
+		if (descripcion != null) {
+			
+			Optional<Cargo> optCargo = Optional.of(cargoDao.findByDescripcion(descripcion));
+			
+			return optCargo.orElse(null);
+		}
+		
+		return null;
+			
+	}
+	
+	
 	/**
 	 * Método que elimina un cargo de la BBDD
 	 * @param idCargo Recibe el id del cargo
@@ -119,7 +157,7 @@ public class GestorCargo {
 		}
 	}
 	
-	
+		
 	/**
 	 * Método para modificar atributo descripcion del objeto Cargo
 	 * @param cargo Se recibo el objeto Cargo completo ya que debemos pasar el id y su descripcion al invocar el método Save para que haga
@@ -167,5 +205,27 @@ public class GestorCargo {
 	public List<Cargo> listarCargos() {
 		
 		return cargoDao.findAll();
+	}
+	
+	
+	/**
+	 * Método que busca todos los cargos que comiencen por la descripcion suministrada
+	 * @param descripcion	Recibe la descripción por la que deben comenzar todos los cargos.
+	 * @return	Lista de los cargos conseguidos que comiencen por la descripcion suministrada
+	 */
+	public List<Cargo> listCargosDescripcionExacta(String descripcion){
+		
+		return cargoDao.findByDescripcionExacta(descripcion.toUpperCase());
+	}
+	
+	
+	/**
+	 * Método que proporciona una lista de todos los cargos que contengan la descripcion proporcionada
+	 * @param descripcion	Recibe la descripción por la que se buscará las coincidencias
+	 * @return	Retorna la lista de cargos correspondiente
+	 */
+	public List<Cargo> listarCargoQueContengaDescripcion(String descripcion){
+		
+		return cargoDao.findByQueContengaDescripcion(descripcion.toUpperCase());
 	}
 }

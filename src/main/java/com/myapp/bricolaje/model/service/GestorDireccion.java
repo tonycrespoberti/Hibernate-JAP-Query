@@ -39,88 +39,59 @@ public class GestorDireccion {
 	 * 			11 Ha habido un fallo intentando persistir la nueva direccion en la BBDD
 	 */
 	public int agregarDireccion(Direccion direccion) {
-		//Procedemos a validar el objeto antes de persistirlo.
 		
-		if (direccion.getIdDireccion() == 0) {
-						
-			return 1; //El id es cero
-					
-		}
-				
-		if (buscarDireccion(direccion.getIdDireccion())) {
-					
-			return 8; //Ya existe un id previo
-			
+		int resultadoValidacion = validarIntegridadDatos(direccion);
+		
+		if (resultadoValidacion == 0) {
+	
+			Optional<Direccion> optDireccion = Optional.of(direccionDao.save(direccion));
+
+			if (optDireccion.isPresent()){
+
+				return 0; //Se ha persistido la nueva direccion correctamente
+
+			}else {
+
+				return 11; //Fallo de la conexión o la BBDD
+			}
 		}
 		
-		if (direccion.getCalleAvenida() != null) {
+		return resultadoValidacion;
+	}
+	
+	
+	/**
+	 * Método para actualizar un objeto del tipo Direccion
+	 * @param direccion Recibe el objeto direccion a modificar
+	 * @return 	Devuelve 0 si fue actualizado correctamente
+	 * 			Devuelve 1 si no lo encuentra para su actualización
+	 * 			Devuelve resultadoValidacion conjunto de error producto de la validacion de los atributos del objeto Direccion 
+	 * 			suministrado por parámetro
+	 */
+	public int actualizarDireccion(Direccion direccion) {
+		
+		int resultadoValidacion = validarIntegridadDatos(direccion);
+		
+		if (resultadoValidacion == 0) {
 			
-			if (direccion.getNumero() != null) {
+			Optional<Direccion> optDireccion = direccionDao.findById(direccion.getIdDireccion());
+			
+			if (optDireccion.isPresent()) {
 				
-				if (direccion.getPlanta() != null) {
-					
-					if (direccion.getPuerta() != null) {
-						
-						if(direccion.getLocalidad() != null) {
-							
-							if (direccion.getProvincia() != null) {
-								
-								if (direccion.getCodigoPostal() != 0) {
-									
-									if(direccion.getTipoDireccion().getIdTipoDireccion() != 0) {
-										
-										Optional<Direccion> optDireccion = Optional.of(direccionDao.save(direccion));
-										
-										if (optDireccion.isPresent()){
-										
-											return 0; //Se ha persistido la nueva direccion correctamente
-											
-										}else {
-												
-											return 11; //Fallo de la conexión o la BBDD
-										}
-										
-									}else {
-										
-										return 10; //El id del Tipo de Direccion es cero
-									}
-									
-								}else {
-									
-									return 9; //El codigo postal es cero
-								}
-								
-							}else {
-								
-								return 7; //La provincia es null
-							}
-							
-						}else {
-							
-							return 6; //La localidad es null
-						}
-						
-					}else {
-						
-						return 5; //La puerta es null
-					}
-					
-				}else {
-					
-					return 4; //La planta es null
-				}
+				direccion.setIdDireccion(optDireccion.get().getIdDireccion());
 				
+				direccionDao.save(direccion);
+				
+				return 0;
 				
 			}else {
 				
-				return 3; //El numero es null
+				return 1; //No se encuentra el objeto solicitado
+				
 			}
-			
-		}else {
-			
-			return 2; // Calle/Avenido es null
-			
 		}
+		
+		return resultadoValidacion;
 	}
 	
 	
@@ -170,12 +141,149 @@ public class GestorDireccion {
 		}
 	}
 	
+	
 	/**
 	 * Método que lista todas las direcciones
 	 * @return Una lista de direcciones
 	 */
-	public List<Direccion> listarDirecciones() {
+	public List<Direccion> listarTodasDirecciones() {
 		
 		return direccionDao.findAll();
+	}
+	
+	
+	/**
+	 * Método que lista todas las direcciones por calle/avenida
+	 * @return Una lista de direcciones
+	 */
+	public List<Direccion> listarDireccionesPorCalleAvenida(String calleAvenida) {
+		
+		return direccionDao.findByAllCalleAvenida(calleAvenida);
+	}
+	
+	
+	/**
+	 * Método que una direccion específica por calle/avenida
+	 * @return Una lista de direcciones que coincidan con la calle/avenida especificada
+	 */
+	public Optional<Direccion> obtenerDireccionPorCalleAvenida(String calleAvenida) {
+		
+		return direccionDao.findByCalleAvenida(calleAvenida);
+	}
+	
+	
+	/**
+	 * Método que devuelve una lista de direcciones por código postal
+	 * @param codigoPostal Recibe un código postal
+	 * @return Devuelve una lista de direcciones según el código postal
+	 */
+	public List<Direccion> listarDireccionesPorCodigoPostal(int codigoPostal){
+		
+		return direccionDao.findByCodigoPostal(codigoPostal);
+	}
+	
+	
+	public List<Direccion> listarDireccionesPorLocalidad(String localidad){
+		
+		return direccionDao.findByLocalidad(localidad);
+	}
+	
+	
+	public List<Direccion> listarDirecciionesPorProvincia(String provincia){
+		
+		return direccionDao.findByProvincia(provincia);
+	}
+	
+	
+	/**
+	 * Método que valida los atributos recibidos de una Direccion
+	 * @param direccion Recibe el objeto Direccion para ser validado 
+	 * @return	0 el objeto ha sido validado
+	 * 			1 si el id es cero
+	 * 			2 si la calle/avenida es null
+	 * 			3 si el numero es null
+	 * 			4 si la planta es null
+	 * 			5 si la puerta es null
+	 * 			6 si la localidad es null
+	 * 			7 si la provincia es null
+	 * 			8 si el id ya existe previamente
+	 * 			9 si el codigo postal es cero
+	 * 			10 si el tipo de direccion es cero
+	 */
+	private int validarIntegridadDatos(Direccion direccion) {
+	
+		//Procedemos a validar el objeto antes de persistirlo.
+
+		if (direccion.getIdDireccion() == 0) {
+
+			return 1; //El id es cero
+
+		}
+
+		if (buscarDireccion(direccion.getIdDireccion())) {
+
+			return 8; //Ya existe un id previo
+
+		}
+
+		if ((direccion.getCalleAvenida() != null) || (!direccion.getCalleAvenida().isEmpty())) {
+
+			if (direccion.getNumero() != null) {
+
+				if ((direccion.getPlanta() != null) || (!direccion.getPlanta().isEmpty())) {
+
+					if ((direccion.getPuerta() != null) || (!direccion.getPuerta().isEmpty())) {
+
+						if((direccion.getLocalidad() != null) || (!direccion.getLocalidad().isEmpty())){
+
+							if ((direccion.getProvincia() != null) || (!direccion.getProvincia().isEmpty())){
+
+								if (direccion.getCodigoPostal() != 0) {
+
+									if(direccion.getTipoDireccion().getIdTipoDireccion() != 0) {
+
+										return 0;
+
+									}else {
+
+										return 10; //El id del Tipo de Direccion es cero
+									}
+
+								}else {
+
+									return 9; //El codigo postal es cero
+								}
+
+							}else {
+
+								return 7; //La provincia es null
+							}
+
+						}else {
+
+							return 6; //La localidad es null
+						}
+
+					}else {
+
+						return 5; //La puerta es null
+					}
+
+				}else {
+
+					return 4; //La planta es null
+				}
+
+			}else {
+
+				return 3; //El numero es null
+			}
+
+		}else {
+
+			return 2; // Calle/Avenido es null
+
+		}
+
 	}
 }
